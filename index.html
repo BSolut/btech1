@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en-US" class="supports_custom_scrollbar">
+<head>
+<style>
+* {margin: 0; padding: 0}
+html, body {width: 100%; height: 100%; overflow: hidden;}
+</style>
+</head>
+<body>
+<canvas id="canvas" style="border: solid 1px #000;"></canvas>
+
+</body>
+
+
+<script src="src/pre.js"></script>
+<script src="src/point.js"></script>
+<script src="src/matrix.js"></script>
+<script src="src/color.js"></script>
+<script src="src/mesh.js"></script>
+<script src="src/rasterizer.js"></script>
+<script src="src/shader.js"></script>
+<script src="src/drawer.js"></script>
+<script src="src/canvas.js"></script>
+<!-- script src="src/point.js"></script>
+<script src="src/filler.js"></script>
+<script src="src/scene.js"></script>
+<script src="src/canvas.js"></script>
+<script src="src/camera.js"></script -->
+<script>
+var domCanvas = document.getElementById('canvas');
+
+var canvas = new Canvas(domCanvas),
+    scene = new Mesh();
+
+canvas.shader = new MyShader();
+canvas.drawer = new Drawer(canvas.width, canvas.height, domCanvas);
+
+
+
+
+var tri = new Triangle();
+tri.vertexa = new Vertex();
+tri.vertexb = new Vertex();
+tri.vertexc = new Vertex();
+
+
+tri.vertexa.position.set(-2, -2, 0);
+tri.vertexa.color.set(0xFF0000);
+
+tri.vertexb.position.set(0, 2, 0);
+tri.vertexb.color.set(0x00FF00);
+
+tri.vertexc.position.set(2, -2, 0);
+tri.vertexc.color.set(0x0000FF);
+
+//canvas.camera.rotx(90 * Math.PI/180)
+
+canvas.camera.translate(0,0,8);
+canvas.camera.scale(1,-1,1);
+
+
+var triMatrix = new Matrix();
+
+//setInterval(function() {
+
+    domCanvas.width = domCanvas.width;
+    canvas.drawer.imgData.data.fill(0);
+    canvas.drawer.depthBuffer.fill(0);
+
+    canvas.drawTriangle(triMatrix, tri)
+    canvas.drawer.flush();
+
+
+    triMatrix.roty(0.3 * Math.PI/180);
+//}, 30/1000);
+
+
+/*
+scene.load('model/Swift.fp3d', function(){
+
+
+
+    canvas.camera.translate(0,-7,25).rotx( -20 * Math.PI/180 ).scale(1,-1,1);
+    var start = Date.now();
+    canvas.drawMesh( scene, Matrix.Identity );
+    canvas.drawer.flush();
+    console.log(Date.now() - start)
+
+
+});
+
+*/
+
+
+
+
+
+/*
+nt main(int argc, char *argv[])
+{
+    Device::Initialize(Examples::DefaultLargeWidth, Examples::DefaultLargeHeight);
+    RenderStates::ClipNear = 3;
+    RenderStates::Zoom = 1.5f;
+    Light::AmbientColor = Color(80, 80, 130);
+
+    FPSCounter *fpsCounter = new FPSCounter(500);
+
+    Font *font = new Font("Media\\Fonts\\16x16.png");
+    Mesh *scene = Mesh::FromFile("Media\\Scene\\Swift.fp3d");
+    Mesh *beethoven = Mesh::FromFile("Media\\Scene\\Beethoven.fp3d");
+
+    Matrix sceneMatrix = Matrix::Identity();
+
+    ShadowVolume *sceneShadow = new ShadowVolume(scene);
+    ShadowVolume *beethovenShadow = new ShadowVolume(beethoven);
+
+    RenderStates::Lights[0]->Enabled = true;
+    RenderStates::Lights[0]->Type = LightType::Point;
+    RenderStates::Lights[0]->Intensity = 20;
+    RenderStates::Lights[0]->DiffuseColor = Color(255, 255, 240);
+
+    Input::Clear();
+    while (!Input::getQuit() && !Input::getKeyDown(SDLK_ESCAPE))
+    {
+        float time = SDL_GetTicks() * .1f;
+        Device::ClearBackBuffer();
+        Device::ClearDepthBuffer();
+        Device::ClearStencilBuffer();
+
+        RenderStates::CameraSpace = Matrix::RotateY(time * .3f) * Matrix::Translate(Vector3f(0, -7, 25)) * Matrix::RotateX(-20);
+        RenderStates::Lights[0]->Enabled = true;
+        RenderStates::Lights[0]->Position = Vector3f(sinf(time * .0075f) * 8, 16 + cosf(time * .005f) * 8, 0);
+        RenderStates::EnableStencilMask = false;
+        RenderStates::CullMode = CullMode::Back;
+
+        Matrix beethovenMatrix = Matrix::Scale(Vector3f(.25f, .25f, .25f)) * Matrix::RotateXYZ(Vector3f(-time * .3f, time * .3f, time * .3f)) * Matrix::Translate(Vector3f(2, 4, -2));
+        scene->Draw(sceneMatrix);
+        beethoven->Draw(beethovenMatrix);
+
+        RenderStates::CullMode = CullMode::None;
+        int32 shadowTriangleCount =
+            sceneShadow->Draw(RenderStates::Lights[0], sceneMatrix, 20) +
+            beethovenShadow->Draw(RenderStates::Lights[0], beethovenMatrix, 20);
+
+        RenderStates::Lights[0]->Enabled = false;
+        RenderStates::EnableStencilMask = true;
+        RenderStates::CullMode = CullMode::Back;
+
+        scene->Draw(sceneMatrix);
+
+        fpsCounter->Frame();
+        Examples::DrawRenderingInformation(font, fpsCounter, scene->getTriangleCount() + beethoven->getTriangleCount() + shadowTriangleCount, false);
+        Device::Present();
+        Input::Update();
+    }
+
+    delete fpsCounter, font;
+    delete scene;
+    delete sceneShadow;
+
+    Device::Destroy();
+    return 0;
+}*/
+
+
+</script>
+
+
+</html>
