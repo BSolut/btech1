@@ -41,7 +41,8 @@ Object.inherits = function(ctor, superCtor) {
 
 <script>
 var renderer = new SR.Renderer(800, 600, new DomSurface(document.getElementById('canvas')) );
-renderer.setPerspective(0.1, 100, 90*Math.PI/180);
+renderer.setPerspective(0.1, 100, 80*Math.PI/180);
+renderer.shadowShader = new ShadowShader();
 renderer.shader = new GouraudShader();
 //renderer.shader = new MinimalShader();
 
@@ -49,62 +50,84 @@ renderer.shader = new GouraudShader();
 var scene = new SR.Scene();
 
 scene.addLight( new Light(Light.Type.Point, {
+    castShadow: false,
+    length: 5,
     point: new Point(0, -5.5,2),
-    intensity: 0.003
+    intensity: 0.003,
+    enabled: false
 }) )
 /*scene.addLight( new Light(Light.Type.Directional, {
     normal: (new Point(-1,-1,1)).normalize(),
     intensity: 0.0015
 }))*/
 scene.addLight( new Light(Light.Type.Ambient, {
-    intensity: 0.0018
+    intensity: 0.0015
 }))
 
-var cube = scene.add( new Renderable( new TriangleMesh( Shapes.makeCube(0,0,0,255) ) )  );
-/*var cube2 = scene.add( new Renderable( new TriangleMesh( Shapes.makeCube(100,100,100,255) ) )  );
-cube2.mesh.buildShadowVolumen();
-cube2.translate(0,-1,0);*/
+var cube = scene.add( new Renderable( new Mesh( Shapes.makeCube(80,80,80,255) ) )  );
+cube.translate(0,-5,0);
 
-//scene.add( new Renderable( new TriangleMesh( Shapes.makePlane(125,125,125,255) ) ) ).scale(5);
+scene.add( new Renderable(new Mesh(Shapes.makePlane(80,80,80,255))) ).translate(0,5,0).scale(10);
 
 
-var fMesh = new FastPix3dMesh(),
+var fMesh = new Mesh(),
     renderMesh = new SR.Renderable(fMesh);
-fMesh.load('model/Swift.fp3d', function(){
-    fMesh.buildShadowVolumen();
+fMesh.loadStl('model/b.stl', function(){
+    //fMesh.buildShadowVolumen();
     renderAni();
+    //renderLoop();
 });
-scene.add( renderMesh ).rotx(Math.PI);
-
-renderer.drawCounter= 0;
-
-
-
+renderMesh.castShadow = true;
+scene.add( renderMesh ).translate(0,0,0).rotx(0);
 
 var val = 0,
-    lightMatrix = new Matrix4();
+    lightMatrix = new Matrix4(),
+    fps;
+const
+    times = [];
+
+
+/*const times = [];
+let fps;
+
+function refreshLoop() {
+  window.requestAnimationFrame(() => {
+
+    refreshLoop();
+  });
+}*/
+
 function renderLoop() {
+    const now = performance.now();
+    while (times.length > 0 && times[0] <= now - 1000) {
+      times.shift();
+    }
+    times.push(now);
+    fps = times.length;
+
     val += 0.01;
 
     renderer.surface.clear();
 
     scene.camera.set( Matrix4.IDENTITY );
     scene.camera.translate(0, -2, -24);
-    scene.camera.rotx( 40 * Math.PI/180  );
-    //scene.camera.roty( 15 * Math.PI/180  );
-    //scene.camera.roty( val * Math.PI  );
+    scene.camera.rotx( 25 * Math.PI/180  );
+    scene.camera.roty( val/8 * Math.PI  );
 
     lightMatrix.set(Matrix4.IDENTITY);
     lightMatrix.roty(val * Math.PI);
-    lightMatrix.translate(0, -1, 5);
+    lightMatrix.translate(0, -0, 5);
     Point.transform( scene.lights[0].point, Point.Zero, lightMatrix );
-    
-    cube.setMatrix(lightMatrix);
-    cube.scale(0.25)
 
+    scene.lights[0].enabled = true;
+
+    cube.setMatrix(lightMatrix);
+    cube.scale(0.25);
 
     renderer.renderer(scene);
     renderer.surface.flush();
+
+    renderer.surface.ctx.fillText(fps, 5,10);
 }
 //renderLoop();
 
@@ -153,6 +176,10 @@ function  renderAni() {
         })
 }
 
+function renderAni() {
+    renderLoop();
+    window.requestAnimationFrame(renderAni);
+}
 
 
 /*

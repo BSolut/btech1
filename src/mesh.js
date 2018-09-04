@@ -79,7 +79,6 @@ var Triangle = function(p1,p2,p3) {
 var _tmpCanvas = document.createElement('canvas'),
     _tmpCtx = _tmpCanvas.getContext('2d');
 
-
 var Material = SR.Material = function(srcImage) {
     _tmpCanvas.width = this.width = srcImage.width;
     _tmpCanvas.height = this.height = srcImage.height;
@@ -118,7 +117,7 @@ Shapes.makeCubeFace = function(r, g, b, xU, yU, zU, xV, yV, zV, xC, yC, zC, nx, 
         ), new Point(nx, ny, nz), new Color(r,g,b,255), [u,v]);
         vs.push(vert);
     }
-    return [ [vs[0], vs[2], vs[1]], [vs[0], vs[3], vs[2]]];
+    return [ new Triangle(vs[0], vs[2], vs[1]), new Triangle(vs[0], vs[3], vs[2]) ];
 }
 
 
@@ -135,49 +134,13 @@ Shapes.makePlane = function(r, g, b, a) {
     let v7 = new Vertex(new Point3(1, 0, 1), new Point(0,1,0), new Color(r,g,b,a), [1,1]);
     let v8 = new Vertex(new Point3(1, 0, -1), new Point(0,1,0), new Color(r,g,b,a), [1,0]);
 
-    tris.push([v5, v6, v7]);
-    tris.push([v1, v3, v2]);
-    tris.push([v5, v7, v8]);
-    tris.push([v1, v4, v3]);
+    tris.push(new Triangle(v5, v6, v7));
+    tris.push(new Triangle(v1, v3, v2));
+    tris.push(new Triangle(v5, v7, v8));
+    tris.push(new Triangle(v1, v4, v3));
 
     return tris;
 }
-
-
-
-//----------------------------
-
-var TriangleMesh = function(triangles) {
-	this.triangles = triangles;
-}
-var dp = TriangleMesh.prototype;
-
-
-dp.buildShadowVolumen = function() {
-    if(this._sv)
-        return this._sv;
-    let sv = new ShadowVolumen();
-    sv.addTriangles( this.triangles );
-    sv.build();
-    return this._sv = sv;
-}
-
-dp.render = function(renderer) {
-    renderer.beginDrawMesh();
-
-    var tri, triIdx = 0;
-    while(tri = this.triangles[triIdx++])
-        renderer.drawTriangle(tri[0], tri[1], tri[2]);
-
-    if(this._sv) {
-        let oldShader = renderer.shader;
-        renderer.shader = renderer._shadowShader || (renderer._shadowShader = new ShadowlShader());
-        this._sv.render(renderer, undefined, 20);
-        renderer.shader = oldShader;
-    }
-
-}
-
 
 
 //===================================
@@ -239,12 +202,14 @@ var Subset = function(vertices, triangles, texture) {
 
 //---------------------
 
-var FastPix3dMesh = function() {
+var Mesh = function(triangles) {
     this.subsets = [];
+    if(triangles)
+        this.subsets.push(new Subset(undefined, triangles, undefined));
 }
-var dp = FastPix3dMesh.prototype;
+var dp = Mesh.prototype;
 
-dp.buildShadowVolumen = function() {
+dp.getShadowVolumen = function() {
     if(this._sv)
         return this._sv;
     let sv = new ShadowVolumen(),
@@ -255,9 +220,19 @@ dp.buildShadowVolumen = function() {
     return this._sv = sv;
 }
 
+
+dp.renderShadow = function(renderer) {
+    var sv = this.getShadowVolumen(),
+        light, lightIdx = 0;
+    while(light = renderer.scene.lights[lightIdx++]) {
+        if(!light.castShadow)
+            continue;
+        sv.render(renderer, light);
+    }
+}
+
 dp.render = function(renderer) {
     renderer.beginDrawMesh();
-
 
     let oldMaterial = renderer.shader.material,
         subset, subsetIdx = 0;
@@ -267,18 +242,7 @@ dp.render = function(renderer) {
         while(tri = subset.triangles[triIdx++])
             renderer.drawTriangle(tri.p1, tri.p2, tri.p3);
     }
-    renderer.shader.material = oldMaterial;    
-
-    if(this._sv) {
-
-        renderer.drawTransform.set(renderer.mvp);//.multiply( this.modelTransform );
-
-        let oldShader = renderer.shader;
-        renderer.shader = renderer._shadowShader || (renderer._shadowShader = new ShadowlShader());
-        this._sv.render(renderer, undefined, 5);
-        renderer.shader = oldShader;
-    }
-
+    renderer.shader.material = oldMaterial;
 }
 
 dp.loadFastPix = function(rawData) {
@@ -338,5 +302,61 @@ dp.load = function(url, callback) {
             }
         }
         nextText();
+    })
+}
+
+
+
+dp.decodeText = function(input) {
+    if(typeof TextDecoder !== 'undefined')
+        return new TextDecoder().decode(input);
+    //String.fromCharCode.apply(null, array) may throws "maximum call stack size exceeded" error
+    var s = [];
+    for(var i=0,l=input.length;i<l;i++)
+        s.push( String.fromCharCode(input[i]) );
+    return decodeURIComponent( s.join('') );
+}
+
+
+
+dp.parsePoint = function(dest, src) {
+    src = src.split(' ');
+    dest.x = parseFloat(src[0]);
+    dest.y = parseFloat(src[1]);
+    dest.z = parseFloat(src[2]);
+}
+
+dp.parseStl = function(data) {
+    let lines = data.split('\n'),
+        tris = [];
+
+    for(let i=0,l=lines.length;i<l;) {
+        var normal = new Point(),
+            v1 = new Vertex(),
+            v2 = new Vertex(),
+            v3 = new Vertex();
+
+        this.parsePoint(normal, lines[i++] );
+        this.parsePoint(v1.point, lines[i++] );
+        this.parsePoint(v2.point, lines[i++] );
+        this.parsePoint(v3.point, lines[i++] );
+        v1.normal.set(normal);
+        v2.normal.set(normal);
+        v3.normal.set(normal);
+
+        v1.color.r = v2.color.r = v3.color.r = 0x35;
+        v1.color.g = v2.color.g = v3.color.g = 0xac;
+        v1.color.b = v2.color.b = v3.color.b = 0x19;
+
+        tris.push( new Triangle(v1,v2,v3) );
+    }
+    this.subsets = [ new Subset(undefined, tris, undefined) ]
+}
+
+dp.loadStl = function(url, callback) {
+    var that = this;
+    doLoad(url, function(response){
+        that.parseStl(that.decodeText(response));
+        callback && callback();
     })
 }

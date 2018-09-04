@@ -1,28 +1,14 @@
-Object.mix = function(a, b) {
-    Object.keys(b).forEach(function(name){
-        a[name] = b[name]
-    })
-    return a;
-}
-Object.defaults = function(target, def, options) {
-    options = options || {};
-    Object.keys(options).forEach(function(name){
-        if(def[name])
-            def[name] = options[name]
-    })
-    return Object.mix(target, def);
-}
-
-
 var Light = function(type, options) {
     this.type = type;
-    Object.defaults(this, {
-        point: new Point(),
-        color: new Color(0xff,0xff,0xff),
-        intensity: 0.01,
-        normal: (new Point(1, -1, 1)).normalize(),
-        visible: true
-    }, options || {})
+    options = options || {};
+
+    this.castShadow = options.castShadow != null ? options.castShadow : false,
+    this.length = options.length != null ? options.length : false,
+    this.point = options.point ? options.point : new Point();
+    this.normal = options.normal ? options.normal : (new Point(1, -1, 1)).normalize();
+    this.color = options.color ? options.color : new Color(0xff,0xff,0xff);
+    this.intensity = options.intensity != null ? options.intensity : 0.01;
+    this.enabled = options.enabled != null ? options.enabled : true;
 
     this.colorIntensity = this.color.copy().scale(this.intensity);
 }

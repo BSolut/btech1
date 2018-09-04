@@ -25,14 +25,43 @@ dp.renderer = function(scene) {
 	this.mvp.multiply( scene.camera );
 
     this.modelTransform.set(Matrix4.Identity);
+
+
+
+    if(this.scene.lights[0].castShadow) {
+        this.scene.lights[0].enabled = false;
+        scene.world.render(this, 1);
+
+        renderer.surface.flush();
+
+
+        this.scene.lights[0].enabled = true;
+        this.shader.useStencil = true;
+        scene.world.render(this, 2);
+        this.shader.useStencil = false;
+
+        renderer.surface.flush();
+    } else {
+        scene.world.render(this, 1);
+    }
+
+
+    /*
+    this.drawTransform.set(this.mvp);
+    let oldShader = this.shader;
+    this.shader = this.shadowShader;
+    this.renderPass = 0;
 	scene.world.render(this);
+
+    this.renderPass++;
+    this.shader = oldShader;
+    scene.world.render(this);
+    */
 }
 
 dp.beginDrawMesh = function() {
     this.drawTransform.set(this.mvp).multiply( this.modelTransform );
 }
-
-
 
 var _triRotate = new TriangleRotate();
 dp.drawTriangle = function(v1,v2,v3, transform) {

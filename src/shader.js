@@ -35,7 +35,6 @@ dp.getPlane = function(plane) {
 }
 
 dp.lerp = function(pa, pb, proc) {
-    
     /*Point.TMP.set(pb.point).mul(1- proc);
     this.point.set(pa.point).mul(proc).add(Point.TMP);*/
 
@@ -132,10 +131,10 @@ dp.postDraw = function(renderer, v1,v2,v3) {}
 
 //----------------
 
-var ShadowlShader = function() {
-    AbstractShader.call(this, 2);
+var ShadowShader = function() {
+    AbstractShader.call(this, 1);
 }
-var dp = ShadowlShader.prototype;
+var dp = ShadowShader.prototype;
 dp.__proto__ = AbstractShader.prototype;
 
 dp.calculateVaryingSlope = function(renderer, v1,v2,v3) {
@@ -146,10 +145,11 @@ dp.calculateVaryingSlope = function(renderer, v1,v2,v3) {
 }
 
 dp.processPixel = function(renderer, vars, x, y) { //254.7
-    var pixIdx = renderer.surface.checkDepth(x,y, this.varying[0]);
-    if(pixIdx === -1)
-        return;
-    renderer.surface.setPixel(pixIdx, 0x00, 0x00, 0x00, 0xff);
+    let myz = vars[0] + 0.001;
+    renderer.surface.setShadowPixel(x,y,0);
+
+    /*var idx = renderer.surface.getIndex(x,y);
+    renderer.surface.setPixel(idx, 0,0,0,0xff);*/
 }
 
 
@@ -282,8 +282,10 @@ dp.lightVertex = function(renderer, v) {
 
     var light, lightIdx = 0;
     while(light = renderer.scene.lights[lightIdx++]) {
+        if(!light.enabled)
+            continue;
         switch(light.type) {
-            case Light.Type.Ambient:                
+            case Light.Type.Ambient:
                 r += light.colorIntensity.r; //addChannels
                 g += light.colorIntensity.g;
                 b += light.colorIntensity.b;
@@ -300,7 +302,7 @@ dp.lightVertex = function(renderer, v) {
                     lightNormal = light.normal;
 
                 var dot = Point.dot( lightNormal, Point.TMP.set(v.consts[3], v.consts[4], v.consts[5]));  //_normalTmp.set( v.point ).normalize() );
-                if(dot > 0) {                    
+                if(dot > 0) {
                     r += light.colorIntensity.r * dot; //c.addChannels(light.colorIntensity.copy().scale(dot));
                     g += light.colorIntensity.g * dot;
                     b += light.colorIntensity.b * dot;
@@ -321,11 +323,11 @@ dp.lightVertex = function(renderer, v) {
                 break;
         }
     }
-    
+
     r *= v.vars[2]; //multiplyChannels
     g *= v.vars[3];
     b *= v.vars[4];
-    
+
     //Clamp
     v.vars[2] = Math.min(0xff, Math.max(0, r));
     v.vars[3] = Math.min(0xff, Math.max(0, g));
@@ -351,7 +353,7 @@ dp.processPixel = function(renderer, vars, x, y) {
 
 
 
-    let mat = this.material;
+    /*let mat = this.material;
     if(mat) {
         //11.4
         let u = vars[6] / invW,
@@ -369,6 +371,15 @@ dp.processPixel = function(renderer, vars, x, y) {
         b = (mat.data[idx+2] * (b/255));// | 0
         a = mat.data[idx+3]
     }
-    
-    renderer.surface.setPixelAlphaBlend(pixIdx, r,g,b,a);
+    */
+    if(this.useStencil) { //Check shadow
+        if(renderer.surface.getShadow(pixIdx) === 0 ) {
+            return;
+            r >>= 1;
+            g >>= 1;
+            b >>= 1;
+        }
+    }
+
+    renderer.surface.setPixel(pixIdx, r,g,b,a);
 }

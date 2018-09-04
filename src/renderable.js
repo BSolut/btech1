@@ -22,6 +22,7 @@ dp.transform = function(m) { return this.matrix.multiply(m) }
 
 var Renderable = SR.Renderable = function(mesh) {
 	Renderable.super_.call(this);
+    this.castShadow = false;
 	this.matrixWorld = new Matrix4();
 	this.children = [];
 	this.material = null;
@@ -54,7 +55,7 @@ dp.updateWorldMatrix = function() {
         child.updateWorldMatrix();
 }
 
-dp.render = function(renderer) {
+dp.render = function(renderer, renderPass) {
     if(this.matrixUpdate) {
         this.updateWorldMatrix();
         this.matrixUpdate = false;
@@ -62,13 +63,21 @@ dp.render = function(renderer) {
 
     renderer.modelTransform.set(this.matrixWorld);
 
-	if(this.mesh)
-		this.mesh.render(renderer);
+	if(this.mesh) {
+        this.mesh.render(renderer);
+
+        if(this.castShadow && renderPass === 1) {
+            let orgShader = renderer.shader;
+            renderer.shader = renderer.shadowShader;
+            this.mesh.renderShadow(renderer);
+            renderer.shader = orgShader;
+        }
+    }
 
     if(this.children.length === 0)
         return;
     var children = this.children,
         child, childIdx = 0;
     while(child = children[childIdx++])
-        child.render(renderer);
+        child.render(renderer, renderPass);
 }

@@ -90,9 +90,10 @@ var _ray1 = new Point(),
 	_ray2 = new Point(),
 	_ray3 = new Point();
 
-dp.render = function(renderer, light, length) {
+dp.render = function(renderer, light) {
 	light = renderer.scene.lights[0];
-	let modelMatrix = renderer.modelTransform;
+	let length = light.length,
+		modelMatrix = renderer.modelTransform;
 
 
 	var tri, triIdx = 0;
