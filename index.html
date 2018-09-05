@@ -6,27 +6,15 @@
 html, body {width: 100%; height: 100%; overflow: hidden;}
 </style>
 </head>
-<body astyle="background-color:#000">
-<canvas id="canvas" style="border: solid 1px #000;"></canvas>
+<body style="background-color:#000">
+<canvas id="canvas" style="display: block; width: 800px; padding: 0; margin: auto;"></canvas>
+
+
+
 
 </body>
 
 
-<script type="text/javascript">
-var SR = {};
-
-Object.inherits = function(ctor, superCtor) {
-    ctor.super_ = superCtor;
-    return ctor.prototype = Object.create(superCtor.prototype, {
-        constructor: {
-            value: ctor,
-            enumerable: false,
-            writable: true,
-            configurable: true
-        }
-    });
-}
-</script>
 <script type="text/javascript" src="./src/math.js"></script>
 <script type="text/javascript" src="./src/surface.js"></script>
 <script type="text/javascript" src="./src/mesh.js"></script>
@@ -35,67 +23,56 @@ Object.inherits = function(ctor, superCtor) {
 <script type="text/javascript" src="./src/light.js"></script>
 <script type="text/javascript" src="./src/shader.js"></script>
 <script type="text/javascript" src="./src/rasterizer.js"></script>
-<script type="text/javascript" src="./src/trirotate.js"></script>
-<script type="text/javascript" src="./src/shadow.js"></script>
 <script type="text/javascript" src="./src/renderer.js"></script>
 
 <script>
-var renderer = new SR.Renderer(800, 600, new DomSurface(document.getElementById('canvas')) );
+var renderer = new Renderer(800, 600, new DomSurface(document.getElementById('canvas')) );
 renderer.setPerspective(0.1, 100, 80*Math.PI/180);
-renderer.shadowShader = new ShadowShader();
 renderer.shader = new GouraudShader();
-//renderer.shader = new MinimalShader();
 
+var scene = new Scene();
 
-var scene = new SR.Scene();
-
+//Setup lights
 scene.addLight( new Light(Light.Type.Point, {
     castShadow: false,
     length: 5,
     point: new Point(0, -5.5,2),
-    intensity: 0.003,
-    enabled: false
+    intensity: 0.002,
 }) )
-/*scene.addLight( new Light(Light.Type.Directional, {
-    normal: (new Point(-1,-1,1)).normalize(),
-    intensity: 0.0015
-}))*/
 scene.addLight( new Light(Light.Type.Ambient, {
-    intensity: 0.0015
+    intensity: 0.002
 }))
 
+//Light cube
 var cube = scene.add( new Renderable( new Mesh( Shapes.makeCube(80,80,80,255) ) )  );
 cube.translate(0,-5,0);
 
-scene.add( new Renderable(new Mesh(Shapes.makePlane(80,80,80,255))) ).translate(0,5,0).scale(10);
+//Plane cube
+var plane = scene.add( new Renderable(new Mesh(Shapes.makePlane(100,100,100,255))) );
+plane.translate(0,5,0).scale(10);
 
+var img = new Image();
+img.src = 'model/swift1.jpg';
+img.onload = function(){
+    plane.mesh.subsets[0].material = new Material(img);
+    renderLoop();
+}
 
+//B Mrsh
 var fMesh = new Mesh(),
-    renderMesh = new SR.Renderable(fMesh);
-fMesh.loadStl('model/b.stl', function(){
-    //fMesh.buildShadowVolumen();
-    renderAni();
-    //renderLoop();
+    renderMesh = new Renderable(fMesh);
+fMesh.loadStl('model/b.stl', function(argument) {
+    renderLoop();
 });
-renderMesh.castShadow = true;
-scene.add( renderMesh ).translate(0,0,0).rotx(0);
+scene.add( renderMesh ).translate(0,0,0).rotx(-10*Math.PI/180);
+
+
 
 var val = 0,
     lightMatrix = new Matrix4(),
     fps;
 const
     times = [];
-
-
-/*const times = [];
-let fps;
-
-function refreshLoop() {
-  window.requestAnimationFrame(() => {
-
-    refreshLoop();
-  });
-}*/
 
 function renderLoop() {
     const now = performance.now();
@@ -112,14 +89,13 @@ function renderLoop() {
     scene.camera.set( Matrix4.IDENTITY );
     scene.camera.translate(0, -2, -24);
     scene.camera.rotx( 25 * Math.PI/180  );
-    scene.camera.roty( val/8 * Math.PI  );
+    scene.camera.roty( 30 * Math.PI/180  );
+    //scene.camera.roty( val/8 * Math.PI  );
 
     lightMatrix.set(Matrix4.IDENTITY);
     lightMatrix.roty(val * Math.PI);
-    lightMatrix.translate(0, -0, 5);
+    lightMatrix.translate(0, -2, 8);
     Point.transform( scene.lights[0].point, Point.Zero, lightMatrix );
-
-    scene.lights[0].enabled = true;
 
     cube.setMatrix(lightMatrix);
     cube.scale(0.25);
@@ -127,64 +103,14 @@ function renderLoop() {
     renderer.renderer(scene);
     renderer.surface.flush();
 
+    renderer.surface.ctx.fillStyle = '#fff';
     renderer.surface.ctx.fillText(fps, 5,10);
 }
-//renderLoop();
 
-
-function benchMark(inner, outer) {
-    inner = inner || 50;
-    outer = outer || 10;
-
-    var times = new Array(outer);
-
-    for(var o = 0;o<outer;o++) {
-        var start = performance.now(),
-            counter = inner;
-        while(counter--)
-            renderLoop();
-        //console.log( (performance.now() - start) / 100 )
-        times[o] = (performance.now() - start) / inner;
-    }
-
-    var min = Infinity,
-        max = -Infinity,
-        avg = 0;
-    for(var i=0;i<outer;i++) {
-        var time = times[i];
-        if(time < min) min = time;
-        if(time > max) max = time;
-        avg += time;
-    }
-    console.log('avg: '+(avg/outer).toFixed(3)+' min: '+min.toFixed(2)+' max:'+max.toFixed(2));
-}
-//benchMark();
-
-
-
-
-function  renderAni() {
-    var counter = 0,
-        start = Date.now(),
-        theInterval = setInterval(function(){
-            renderLoop();
-            if(++counter === 200) {
-                console.log( (Date.now() - start) / 200 )
-                clearInterval(theInterval);
-            }
-
-        })
-}
-
-function renderAni() {
+(function renderAni() {
     renderLoop();
     window.requestAnimationFrame(renderAni);
-}
-
-
-/*
-536.6
-*/
+})();
 
 </script>
 

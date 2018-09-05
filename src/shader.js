@@ -1,6 +1,6 @@
 //----------------
 const
-    Plane = SR.Plane = {
+    Plane = {
         X: 1,
         Y: 2,
         Z: 3,
@@ -10,7 +10,7 @@ const
 
 //----------------
 
-var ShaderVertex = function(varSize, constSize) {
+function ShaderVertex(varSize, constSize) {
 	this.point = new Point();
 	this.varSize = varSize;
     this.constSize = constSize;
@@ -54,7 +54,7 @@ dp.lerp = function(pa, pb, proc) {
 
 //----------------
 
-var AbstractShader = function(varSize, constSize) {
+function AbstractShader(varSize, constSize) {
 	this.varSize = varSize;
     this.constSize = constSize;
 
@@ -131,31 +131,7 @@ dp.postDraw = function(renderer, v1,v2,v3) {}
 
 //----------------
 
-var ShadowShader = function() {
-    AbstractShader.call(this, 1);
-}
-var dp = ShadowShader.prototype;
-dp.__proto__ = AbstractShader.prototype;
-
-dp.calculateVaryingSlope = function(renderer, v1,v2,v3) {
-    v1.vars[0] = v1.point.z;
-    v2.vars[0] = v2.point.z;
-    v3.vars[0] = v3.point.z;
-    return true;
-}
-
-dp.processPixel = function(renderer, vars, x, y) { //254.7
-    let myz = vars[0] + 0.001;
-    renderer.surface.setShadowPixel(x,y,0);
-
-    /*var idx = renderer.surface.getIndex(x,y);
-    renderer.surface.setPixel(idx, 0,0,0,0xff);*/
-}
-
-
-//----------------
-
-var MinimalShader = function() {
+function MinimalShader() {
     AbstractShader.call(this, 2+4);
 }
 var dp = MinimalShader.prototype;
@@ -241,7 +217,7 @@ dp.processPixel = function(renderer, vars, x, y) { //254.7
 
 //----------------
 
-var GouraudShader = function() {
+function GouraudShader() {
     AbstractShader.call(this, 2+4+3+2, 3+3);
 }
 var dp = GouraudShader.prototype;
@@ -351,11 +327,8 @@ dp.processPixel = function(renderer, vars, x, y) {
         b = vars[4] / invW,
         a = vars[5] / invW;
 
-
-
-    /*let mat = this.material;
+    let mat = this.material;
     if(mat) {
-        //11.4
         let u = vars[6] / invW,
             v = vars[7] / invW;
 
@@ -366,19 +339,10 @@ dp.processPixel = function(renderer, vars, x, y) {
             ty = Math.ceil(v * (mat.height-1)),
             idx = (ty*mat.width +tx)<<2;
 
-        r = (mat.data[idx+0] * (r/255));// | 0
-        g = (mat.data[idx+1] * (g/255));// | 0
-        b = (mat.data[idx+2] * (b/255));// | 0
+        r = (mat.data[idx+0] * (r/255)) | 0
+        g = (mat.data[idx+1] * (g/255)) | 0
+        b = (mat.data[idx+2] * (b/255)) | 0
         a = mat.data[idx+3]
-    }
-    */
-    if(this.useStencil) { //Check shadow
-        if(renderer.surface.getShadow(pixIdx) === 0 ) {
-            return;
-            r >>= 1;
-            g >>= 1;
-            b >>= 1;
-        }
     }
 
     renderer.surface.setPixel(pixIdx, r,g,b,a);

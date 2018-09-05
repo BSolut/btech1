@@ -1,6 +1,6 @@
 //=====================
 
-var Matrix4 = SR.Matrix4 = function(m1) {
+function Matrix4(m1) {
     this.m = m1 != null ? m1 : Matrix4.IDENTITY.slice();
 }
 Matrix4.IDENTITY = [1, 0, 0, 0,
@@ -31,7 +31,7 @@ dp.multiply = function(src) {
 
     var me = this.m,
         dest = Matrix4.ARRAY_POOL;
-    for(var i=0;i<16;i++)
+    for(var i=0;i<16;i++) //Fill is slower here
         dest[i] = 0;
 
     for (var i = 0; i < 4; i++) {
@@ -152,71 +152,12 @@ dp.ortho = function(left, right, bottom, top, near, far) {
     return this;
 }
 
-/*
-
-    perspectiveFov: function(fovyInDegrees, front) {
-        fovyInDegrees = fovyInDegrees == null ? 50 : fovyInDegrees;
-        front = front == null ? 1 : front;
-        var tan = front * Math.tan(fovyInDegrees * Math.PI / 360);
-        return this.perspective(-tan, tan, -tan, tan, front, 2 * front);
-    },
-
-    perspective: function(left, right, bottom, top, near, far) {
-        left = left == null ? -1 : left;
-        right = right == null ? 1 : right;
-        bottom = bottom == null ? -1 : bottom;
-        top = top == null ? 1 : top;
-        near = near == null ? 1 : near;
-        far = far == null ? 100 : far;
-
-        var near2 = 2 * near,
-            dx = right - left,
-            dy = top - bottom,
-            dz = far - near,
-            m = new Array(16);
-
-        m[0] = near2 / dx;
-        m[1] = 0.0;
-        m[2] = (right + left) / dx;
-        m[3] = 0.0;
-        m[4] = 0.0;
-        m[5] = near2 / dy;
-        m[6] = (top + bottom) / dy;
-        m[7] = 0.0;
-        m[8] = 0.0;
-        m[9] = 0.0;
-        m[10] = -(far + near) / dz;
-        m[11] = -(far * near2) / dz;
-        m[12] = 0.0;
-        m[13] = 0.0;
-        m[14] = -1.0;
-        m[15] = 0.0;
-
-        return new Matrix(m);
-    },
-
-    */
-
 //=====================
 
-
-var Point = SR.Point = function(x,y,z,w) {
+function Point(x,y,z,w) {
     this.set(x,y,z,w);
 }
 var dp = Point.prototype;
-
-/*Object.defineProperty(Point.prototype, 'x', {
-    get: function(){ return this[0] },
-    set: function(val){ return this[0] = val }
-})
-Object.defineProperty(Point.prototype, 'y', {
-    get: function(){ return this[1] },
-    set: function(val){ return this[1] = val }
-})
-Object.defineProperty(Point.prototype, 'z', {
-    get: function(){ return this[2] },
-    set: function(val){ return this[2] = val }
-})*/
 
 //--- Static
 Point.set = function(dest, x, y, z, w) {
@@ -277,13 +218,6 @@ Point.transform = function(dest, src, matrix) {
     dest.y = x * m[4] + y * m[5] + z * m[6] + w * m[7];
     dest.z = x * m[8] + y * m[9] + z * m[10]+ w * m[11];
     dest.w = x * m[12]+ y * m[13]+ z * m[14]+ w * m[15];
-    /*var srcV = [x,y,z,w],
-        destV = [0,0,0,0];
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            destV[i] += m[j + i * 4] * srcV[j];
-        }
-    }*/
 
     return dest;
 }
@@ -396,225 +330,3 @@ Point.TMP2 = new Point();
 Point.TMP3 = new Point();
 Point.TMP4 = new Point();
 Point.Zero = Point.ZERO = new Point();
-
-
-
-
-
-
-
-
-/*
-var Point = function(x,y,z,r) {
-    this.set(x, y, z, r)
-}
-dp = Point.prototype;
-
-Point.fromVector = function(p1, p2, result) {
-    result = result ? result : new Point()
-    return result.set(p2).sub(p1);
-}
-
-//--- Static
-
-//Modifier
-
-
-
-
-
-
-
-Point.rotate = function(dest,a,angle){
-    if(angle !== 0){
-        var c = Math.cos(angle),
-            s = Math.sin(angle),
-            x = a.x,
-            y = a.y;
-        dest.x = c*x -s*y;
-        dest.y = s*x +c*y;
-    } else {
-        dest.x = a.x;
-        dest.y = a.y;
-    }
-    return dest;
-}
-
-Point.rotateX = function(dest, a, angle) {
-    var c = Math.cos(angle),
-        s = Math.sin(angle),
-        x = a.x,
-        y = a.y,
-        z = a.z;
-    dest.y = y*c - z*s;
-    dest.z = y*s + z*c;
-    dest.x = x;
-
-    return dest;
-}
-
-Point.rotateY = function(dest, a, angle) {
-    var c = Math.cos(angle),
-        s = Math.sin(angle),
-        x = a.x,
-        y = a.y,
-        z = a.z;
-    dest.z = z*c - x*s;
-    dest.x = z*s + x*c;
-    dest.y = y;
-
-    return dest;
-}
-
-/*
-Point.transform = function(dest, src, matrix) {
-    //todo is
-    var m = matrix.m,
-        x = src.x,
-        y = src.y,
-        z = src.z,
-        r = src.r;
-
-    dest.x = x * m[0] + y * m[1] + z * m[2] + r * m[3];
-    dest.y = x * m[4] + y * m[5] + z * m[6] + r * m[7];
-    dest.z = x * m[8] + y * m[9] + z * m[10]+ r * m[11];
-    dest.r = x * m[12]+ y * m[13]+ z * m[14]+ r * m[15];
-
-    return dest;
-}* /
-
-Point.transform = function(dest, src, matrix) {
-    //todo is
-    var m = matrix.m,
-        x = src.x,
-        y = src.y,
-        z = src.z;
-
-    /*dest.x = x * m[0] + y * m[1] + z * m[2] + r * m[3];
-    dest.y = x * m[4] + y * m[5] + z * m[6] + r * m[7];
-    dest.z = x * m[8] + y * m[9] + z * m[10]+ r * m[11];
-    dest.r = x * m[12]+ y * m[13]+ z * m[14]+ r * m[15];* /
-    dest.x = m[0] * x + m[4] * y + m[8] * z + m[12];
-    dest.y = m[1] * x + m[5] * y + m[9] * z + m[13];
-    dest.z = m[2] * x + m[6] * y + m[10]* z + m[14];
-
-    return dest;
-}
-
-
-Point.cross = function(dest, a, b) {
-    var ax = a.x, bx = b.x,
-        ay = a.y, by = b.y,
-        az = a.z, bz = b.z;
-
-    dest.x = ay * bz - az * by;
-    dest.y = az * bx - ax * bz;
-    dest.z = ax * by - ay * bx;
-    return dest;
-}
-
-//getter
-Point.distance = function(a,b) {
-    var x = a.x - b.x;
-    var y = a.y - b.y;
-    return Math.sqrt(x*x + y*y);
-}
-
-Point.distance3 = function(a,b) {
-    var x = a.x - b.x;
-    var y = a.y - b.y;
-    var z = a.z - b.z;
-    return Math.sqrt(x*x + y*y + z*z);
-}
-
-
-Point.dot = function(a, b) {
-    return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-Point.magnitudeSquared = function(a) {
-    return Point.dot(a, a)
-}
-
-Point.magnitude = function(a) {
-    return Math.sqrt( Point.magnitudeSquared(a) );
-}
-
-
-//-- Instance
-
-dp.copy = function() {
-    return new Point(this);
-}
-
-dp.set = function(x,y,z,r) {
-    return Point.set(this, x, y, z, r);
-}
-
-dp.add = function(b) {
-    return Point.add(this, this, b);
-}
-
-dp.sub = function(b) {
-    return Point.sub(this, this, b);
-}
-
-dp.mul = function(b) {
-    return Point.mul(this, this, b);
-}
-
-dp.div = function(b) {
-    return Point.div(this, this, b);
-}
-
-
-dp.cross = function(b) {
-    return Point.cross(this, this, b);
-}
-
-
-dp.transform = function(matrix) {
-    return Point.transform(this, this, matrix);
-}
-
-dp.rotate = function(angle) {
-    return Point.rotate(this, this, angle);
-}
-
-dp.rotateY = function(angle) {
-    return Point.rotateY(this, this, angle);
-}
-
-dp.rotateX = function(angle) {
-    return Point.rotateX(this, this, angle);
-}
-
-dp.scale = function(x,y,z) {
-    x = x == null ? 1 : x;
-    y = y == null ? x : y;
-    z = z == null ? y : z;
-
-    this.x *= x;
-    this.y *= y;
-    this.z *= z;
-}
-
-
-dp.distance = function(b) { return Point.distance(this, b); }
-dp.distance3 = function(b) { return Point.distance3(this, b); }
-
-dp.magnitude = function() {
-    return Point.magnitude(this)
-}
-
-dp.dot = function(b) {
-    return Point.dot(this, b);
-}
-
-dp.angle = function() {
-    return Math.atan2(this.y, this.x);
-}
-
-
-
-*/

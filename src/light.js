@@ -1,4 +1,4 @@
-var Light = function(type, options) {
+function Light(type, options) {
     this.type = type;
     options = options || {};
 

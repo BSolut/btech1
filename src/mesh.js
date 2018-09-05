@@ -1,6 +1,6 @@
 //----------------------------
 
-var Color = function(r,g,b,a) {
+function Color(r,g,b,a) {
     if(typeof r === 'number' && g === undefined && b === undefined) {
         this.r = (r & 0xff0000) >> 16;
         this.g = (r & 0x00ff00) >> 8;
@@ -61,7 +61,7 @@ dp.scale = function(n) {
 
 //----------------------------
 
-var Vertex = SR.Vertex = function(point, normal, color, texture){
+function Vertex(point, normal, color, texture){
     this.point = point || new Point();
     this.normal = normal || new Point();
     this.texture = texture;
@@ -79,7 +79,7 @@ var Triangle = function(p1,p2,p3) {
 var _tmpCanvas = document.createElement('canvas'),
     _tmpCtx = _tmpCanvas.getContext('2d');
 
-var Material = SR.Material = function(srcImage) {
+function Material(srcImage) {
     _tmpCanvas.width = this.width = srcImage.width;
     _tmpCanvas.height = this.height = srcImage.height;
     _tmpCtx.drawImage(srcImage, 0, 0);
@@ -88,7 +88,7 @@ var Material = SR.Material = function(srcImage) {
 
 //----------------------------
 
-var Shapes = SR.Shapes = function() {}
+function Shapes() {}
 
 Shapes.makeCube = function(r, g, b) {
     let tris = [];
@@ -194,7 +194,7 @@ dp.readString = function() {
 
 //---------------------
 
-var Subset = function(vertices, triangles, texture) {
+function Subset(vertices, triangles, texture) {
     this.vertices = vertices;
     this.triangles = triangles;
     this.texture = texture;
@@ -202,34 +202,12 @@ var Subset = function(vertices, triangles, texture) {
 
 //---------------------
 
-var Mesh = function(triangles) {
+function Mesh(triangles) {
     this.subsets = [];
     if(triangles)
         this.subsets.push(new Subset(undefined, triangles, undefined));
 }
 var dp = Mesh.prototype;
-
-dp.getShadowVolumen = function() {
-    if(this._sv)
-        return this._sv;
-    let sv = new ShadowVolumen(),
-        subset, subsetIdx = 0;
-    while(subset = this.subsets[subsetIdx++])
-        sv.addTriangles( subset.triangles )
-    sv.build();
-    return this._sv = sv;
-}
-
-
-dp.renderShadow = function(renderer) {
-    var sv = this.getShadowVolumen(),
-        light, lightIdx = 0;
-    while(light = renderer.scene.lights[lightIdx++]) {
-        if(!light.castShadow)
-            continue;
-        sv.render(renderer, light);
-    }
-}
 
 dp.render = function(renderer) {
     renderer.beginDrawMesh();
@@ -267,7 +245,6 @@ dp.loadFastPix = function(rawData) {
             vex.color.r = parser.readUint8();
             vex.color.g = parser.readUint8();
             vex.color.b = parser.readUint8();
-            //parser.readUint8();parser.readUint8();parser.readUint8();
         }
 
         var triangles = new Array(triangleCount);
@@ -316,8 +293,6 @@ dp.decodeText = function(input) {
         s.push( String.fromCharCode(input[i]) );
     return decodeURIComponent( s.join('') );
 }
-
-
 
 dp.parsePoint = function(dest, src) {
     src = src.split(' ');

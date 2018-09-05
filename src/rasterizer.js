@@ -1,6 +1,4 @@
-var TriangleRasterizer = SR.TriangleRasterizer = function() {
-    this.needClipping = true;
-}
+function TriangleRasterizer() {}
 var dp = TriangleRasterizer.prototype;
 
 var _vec1 = new Point(),
@@ -83,9 +81,7 @@ dp.drawHalfTriangle = function(renderer, scanStart, scanEnd, p1, slope1, p2, slo
         shader.calculateVaryingBase(baseVertex, low, i);
 
         for(let j=low;j<high;j++) {
-            //if(j>=0 && i>=0 && j< renderer.width && i < renderer.height)
-            renderer.shader.processPixel(renderer, varying, j, i) 
-            
+            renderer.shader.processPixel(renderer, varying, j, i)             
             //We are ~10% faster if we do the incrementVaryingX here
             //renderer.shader.incrementVaryingX();            
             for(var vi=0,vil=shader.varSize;vi<vil;vi++) //renderer.shader.incrementVaryingX();            

@@ -1,6 +1,6 @@
 //=====
 
-var Transformable = SR.Transformable = function() {
+function Transformable() {
     this.matrix = new Matrix4();
     this.matrixUpdate = false;
 }
@@ -20,8 +20,8 @@ dp.transform = function(m) { return this.matrix.multiply(m) }
 
 //=====
 
-var Renderable = SR.Renderable = function(mesh) {
-	Renderable.super_.call(this);
+function Renderable(mesh) {
+	Transformable.call(this);
     this.castShadow = false;
 	this.matrixWorld = new Matrix4();
 	this.children = [];
@@ -30,7 +30,8 @@ var Renderable = SR.Renderable = function(mesh) {
 	if(mesh)
 		this.setMesh(mesh);
 }
-var dp = Object.inherits(Renderable, Transformable);
+var dp = Renderable.prototype;
+dp.__proto__ = Transformable.prototype; 
 
 dp.add = function(child) {
     child.parent = this;
@@ -63,16 +64,8 @@ dp.render = function(renderer, renderPass) {
 
     renderer.modelTransform.set(this.matrixWorld);
 
-	if(this.mesh) {
+	if(this.mesh) 
         this.mesh.render(renderer);
-
-        if(this.castShadow && renderPass === 1) {
-            let orgShader = renderer.shader;
-            renderer.shader = renderer.shadowShader;
-            this.mesh.renderShadow(renderer);
-            renderer.shader = orgShader;
-        }
-    }
 
     if(this.children.length === 0)
         return;

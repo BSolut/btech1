@@ -1,6 +1,52 @@
+//--------
 
+function TriangleRotate() {
+    this.alist = [];
+    this.blist = [];
 
-var Renderer = SR.Renderer = function(width,height,surface) {
+    for(var i=0;i<50;i++) {
+        this.alist.push( new Triangle() );
+        this.blist.push( new Triangle() );
+    }
+}
+var dp = TriangleRotate.prototype;
+
+dp.start = function(p1,p2,p3) {
+    var tri = this.blist[0];
+    tri.p1 = p1;
+    tri.p2 = p2;
+    tri.p3 = p3;
+    this.alength = 0;
+    this.blength = 1;
+}
+
+dp.reset = function() {
+    var tmp = this.alist;
+    this.alist = this.blist;
+    this.blist = tmp;
+    tmp = this.alength;
+    this.alength = this.blength;
+    this.blength = 0;
+}
+
+dp.get = function(idx) {
+    return this.alist[idx];
+}
+
+dp.push = function(tri) {
+    this.pushPoint(tri.p1,tri.p2,tri.p3);
+}
+
+dp.pushPoint = function(p1,p2,p3) {
+    var dest = this.blist[this.blength++];
+    dest.p1 = p1;
+    dest.p2 = p2;
+    dest.p3 = p3;
+}
+
+//--------
+
+function Renderer(width,height,surface) {
 	this.width = width;
 	this.height = height;
 	this.surface = surface;
@@ -17,46 +63,14 @@ dp.setPerspective = function(near, far, fov) {
 	this.projectionTransform.perspective(this.width, this.height, near, far, fov);
 }
 
-
 dp.renderer = function(scene) {
     this.scene = scene;
-	//this.surface.clear();
 	this.mvp.set(this.projectionTransform);
 	this.mvp.multiply( scene.camera );
 
     this.modelTransform.set(Matrix4.Identity);
 
-
-
-    if(this.scene.lights[0].castShadow) {
-        this.scene.lights[0].enabled = false;
-        scene.world.render(this, 1);
-
-        renderer.surface.flush();
-
-
-        this.scene.lights[0].enabled = true;
-        this.shader.useStencil = true;
-        scene.world.render(this, 2);
-        this.shader.useStencil = false;
-
-        renderer.surface.flush();
-    } else {
-        scene.world.render(this, 1);
-    }
-
-
-    /*
-    this.drawTransform.set(this.mvp);
-    let oldShader = this.shader;
-    this.shader = this.shadowShader;
-    this.renderPass = 0;
-	scene.world.render(this);
-
-    this.renderPass++;
-    this.shader = oldShader;
-    scene.world.render(this);
-    */
+    scene.world.render(this, 1);
 }
 
 dp.beginDrawMesh = function() {
@@ -93,7 +107,6 @@ dp.drawTriangle = function(v1,v2,v3, transform) {
         this.rasterizerTriangle(tNext.p1, tNext.p2, tNext.p3);
     }
 }
-
 
 
 dp.getClipT = function(pA, pB, plane, isLow) {
@@ -175,9 +188,6 @@ dp.clipTriangles = function(triangles, plane, isLow, checkW) {
 
             var p3copy = shader.copyShaderVertex(tri.p3);
 
-            //ret.push( new Triangle( v12copy, tri.p2, p3copy ));
-            //ret.push( new Triangle( v12, tri.p3, v13 ) );
-
             triangles.pushPoint( v12copy, tri.p2, p3copy );
             triangles.pushPoint( v12, tri.p3, v13 );
         }
@@ -220,11 +230,9 @@ dp.rasterizerTriangle = function(v1,v2,v3) {
 
     let vL = Point.TMP.set(p2).sub(p1);
     let vR = Point.TMP1.set(p3).sub(p1);
-    let cr = vL.cross2(vR);
-    //keep Clockwise Faces cull Counter Clockwise Faces
-    if (cr < 0)
+    let cr = vL.cross2(vR);    
+    if (cr < 0) //keep Clockwise Faces cull Counter Clockwise Faces
         return;
-
 
     this.shader.preDraw(this, v1, v2, v3);
     this.triangleRasterizer.draw(this, v1, v2, v3);

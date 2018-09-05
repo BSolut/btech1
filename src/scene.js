@@ -1,7 +1,7 @@
 
-var Scene = SR.Scene = function() {
+function Scene() {
 	this.camera = new Matrix4();
-	this.world = new SR.Renderable();
+	this.world = new Renderable();
     this.lights = [];
 }
 var dp = Scene.prototype;
